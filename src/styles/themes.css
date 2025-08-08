@@ -1,0 +1,11 @@
+/* generated themes */
+[data-theme="dark"] {
+  --color-background: #0b0f17;
+  --color-neutral: #e5e7eb;
+}
+
+[data-theme="light"] {
+  --color-background: #ffffff;
+  --color-neutral: #111827;
+}
+

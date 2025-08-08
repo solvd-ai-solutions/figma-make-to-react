@@ -1,0 +1,19 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="512" height="512" rx="80" fill="#6366F1"/>
+  
+  <!-- Figma-like design elements -->
+  <rect x="120" y="120" width="80" height="120" rx="12" fill="white"/>
+  <rect x="220" y="120" width="80" height="120" rx="12" fill="white" opacity="0.8"/>
+  <rect x="320" y="120" width="80" height="120" rx="12" fill="white" opacity="0.6"/>
+  
+  <!-- Code brackets -->
+  <path d="M 160 280 L 140 260 L 160 240 M 352 280 L 372 260 L 352 240" stroke="white" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- Arrow indicating conversion -->
+  <path d="M 240 200 L 280 200 M 280 200 L 270 190 M 280 200 L 270 210" stroke="white" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- React symbol -->
+  <circle cx="380" cy="320" r="20" fill="none" stroke="white" stroke-width="4"/>
+  <circle cx="380" cy="320" r="8" fill="white"/>
+</svg> 

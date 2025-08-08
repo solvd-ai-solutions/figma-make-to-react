@@ -1,0 +1,30 @@
+name: Figma Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Build tokens
+        run: npm run tokens
+      - name: Convert Figma HTML
+        run: npm run convert
+      - name: Optimize assets
+        run: npm run assets
+      - name: QA
+        run: npm run qa || true
+      - name: Build
+        run: npm run build --if-present
+

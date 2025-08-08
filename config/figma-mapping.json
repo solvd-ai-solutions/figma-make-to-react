@@ -1,0 +1,29 @@
+{
+  "classMap": {
+    "auto-layout": "flex",
+    "h-stack": "flex flex-row",
+    "v-stack": "flex flex-col",
+    "center": "items-center justify-center",
+    "space-between": "justify-between",
+    "space-around": "justify-around",
+    "wrap": "flex-wrap",
+    "frame-horizontal": "flex flex-row",
+    "frame-vertical": "flex flex-col",
+    "gap-0": "gap-0",
+    "gap-1": "gap-1",
+    "gap-2": "gap-2",
+    "gap-3": "gap-3",
+    "gap-4": "gap-4",
+    "gap-6": "gap-6",
+    "gap-8": "gap-8",
+    "hidden": "hidden",
+    "visible": "block",
+    "text-center": "text-center",
+    "text-left": "text-left",
+    "text-right": "text-right",
+    "shadow": "shadow",
+    "rounded": "rounded",
+    "rounded-full": "rounded-full"
+  },
+  "preserveUnknown": true
+}

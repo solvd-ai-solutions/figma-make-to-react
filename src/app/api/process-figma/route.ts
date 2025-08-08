@@ -199,3 +199,29 @@ function generateHTMLFromCSS(cssContent: string): string {
   
   return html
 }
+
+// Helper: safe read file, return empty string if not found
+async function safeRead(filePath: string): Promise<string> {
+  try {
+    return await fs.readFile(filePath, 'utf-8')
+  } catch {
+    return ''
+  }
+}
+
+// Helper: convert HTML string to a simple React component TSX string
+function generateComponentFromHtml(inputHtml: string): string {
+  const bodyMatch = inputHtml.match(/<body[^>]*>([\s\S]*?)<\/body>/i)
+  const inner = bodyMatch ? bodyMatch[1].trim() : inputHtml
+    .replace(/<!DOCTYPE[^>]*>/gi, '')
+    .replace(/<html[^>]*>/gi, '')
+    .replace(/<\/html>/gi, '')
+    .replace(/<head[\s\S]*?<\/head>/gi, '')
+    .replace(/<body[^>]*>/gi, '')
+    .replace(/<\/body>/gi, '')
+    .trim()
+
+  const jsx = inner || '<div className="app">Generated component</div>'
+  const tsx = `import React from 'react'\n\nexport interface GeneratedProps { [key: string]: unknown }\n\nexport default function Generated(props: GeneratedProps) {\n  return (\n    <>\n${jsx.split('\n').map(l => '      ' + l).join('\n')}\n    </>\n  )\n}\n`
+  return tsx
+}

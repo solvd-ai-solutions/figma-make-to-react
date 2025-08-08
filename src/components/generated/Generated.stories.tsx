@@ -1,12 +1,14 @@
 import Generated from './Generated'
 
-export default {
+const meta = {
   title: 'Generated/Generated',
   component: Generated,
   parameters: {
     layout: 'centered',
   },
 }
+
+export default meta
 
 export const Default = {
   args: {

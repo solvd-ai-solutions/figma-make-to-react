@@ -1,8 +1,10 @@
 import Home from './Home'
 
-export default {
+const meta = {
   title: 'Generated/Home',
   component: Home,
 }
+
+export default meta
 
 export const Default = () => <Home />

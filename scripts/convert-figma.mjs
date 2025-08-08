@@ -82,6 +82,16 @@ function finalizeJsx(html) {
 function transformHtmlToJsx(inputHtml, mapping, componentName, tokens, mode) {
   const $ = load(inputHtml, { xmlMode: false, decodeEntities: false })
 
+  // Extract only the body content, not the full HTML document
+  let bodyContent = $('body').html() || inputHtml
+  if (!bodyContent || bodyContent === inputHtml) {
+    // If no body tag found, use the entire content but remove html/head/body tags
+    bodyContent = inputHtml.replace(/<html[^>]*>|<\/html>|<head[^>]*>|<\/head>|<body[^>]*>|<\/body>/gi, '')
+  }
+  
+  // Create a new cheerio instance with just the body content
+  const $body = load(bodyContent, { xmlMode: false, decodeEntities: false })
+
   const styleMap = new Map() // canonical style string -> class token (e.g., __s1__)
   const cssRules = [] // [{ className: 's1', css: 'color:red;' }]
   let styleCounter = 0
@@ -93,8 +103,8 @@ function transformHtmlToJsx(inputHtml, mapping, componentName, tokens, mode) {
     images: [], // { token, src, alt, width, height, className }
   }
 
-  $('*').each((_, el) => {
-    const $el = $(el)
+  $body('*').each((_, el) => {
+    const $el = $body(el)
     const attribs = el.attribs || {}
     for (const [name, value] of Object.entries(attribs)) {
       if (name === 'class') {
@@ -318,7 +328,7 @@ function transformHtmlToJsx(inputHtml, mapping, componentName, tokens, mode) {
     }
   })
 
-  let normalized = $.root().html() || ''
+  let normalized = $body.html() || ''
   normalized = finalizeJsx(normalized)
 
   return { html: normalized, cssRules, props }
@@ -361,7 +371,7 @@ async function convertFile(filePath, mapping, tokens, mode) {
     const key = t.key || `text${t.token.replace(/__|TEXT_|__/g, '').toLowerCase()}`
     propsInterfaceLines.push(`${key}?: string`)
     const safe = t.default.replace(/`/g, '\\`').replace(/\$/g, '$$$$')
-    jsx = jsx.replaceAll(t.token, `\${'${'}props.${key} ?? \`${safe}\`\${'}'}`)
+    jsx = jsx.replaceAll(t.token, `{props.${key} ?? "${safe}"}`)
   }
 
   // Replace image tokens with <Picture/> or SVG component
@@ -392,7 +402,7 @@ async function convertFile(filePath, mapping, tokens, mode) {
       const repl = `<${importName} className=${classExpr} />`
       jsx = jsx.replace(img.token, repl)
     } else {
-      const repl = `<Picture src={props.${iKey} ?? \"/images/${path.basename(img.src)}\"} alt={props.${aKey} ?? \"${(img.alt || path.basename(img.src, '.svg')).replace(/"/g, '\\"')}\"} className=${classExpr}${w}${h} />`
+      const repl = `<Picture src={props.${iKey} ?? "/images/${path.basename(img.src)}"} alt={props.${aKey} ?? "${(img.alt || path.basename(img.src, '.svg')).replace(/"/g, '\\"')}"} className=${classExpr}${w}${h} />`
       jsx = jsx.replace(img.token, repl)
       needPictureImport = true
     }
@@ -402,7 +412,7 @@ async function convertFile(filePath, mapping, tokens, mode) {
   const slotLines = (props.slots || []).map((s) => `${s.name}?: React.ReactNode`)
   for (const s of (props.slots || [])) {
     const defaultJsx = s.defaultHtml
-    const expr = `\${'${'}props.${s.name} ?? (<>${defaultJsx}</>)\${'}'}`
+    const expr = `{props.${s.name} ?? (<>${defaultJsx}</>)}`
     jsx = jsx.replace(s.token, expr)
   }
 
@@ -417,7 +427,7 @@ async function convertFile(filePath, mapping, tokens, mode) {
     .filter(Boolean)
     .join('\n')
 
-  const out = `import React from 'react'\n${imports}\n${propsDecl}export default function ${Component}(props: ${propsType}) {\n  return (\n    <>\n${jsx.split('\n').map((l) => '      ' + l).join('\n')}\n    </>\n  )\n}\n`
+  const out = `import React from 'react'\n${imports}\n${propsDecl}export default function ${Component}(props: ${propsType}) {\n  return (\n    ${jsx.split('\n').map((l) => '    ' + l).join('\n')}\n  )\n}\n`
   const fileOut = path.join(OUT_DIR, `${Component}.tsx`)
   await fs.writeFile(fileOut, out, 'utf-8')
   return { in: filePath, out: fileOut }

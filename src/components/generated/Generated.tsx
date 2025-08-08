@@ -6,13 +6,11 @@ export interface GeneratedProps {
   text3?: string;
   text4?: string;
   text5?: string;
-  text6?: string;
-  text7?: string
+  text6?: string
 }
-
 export default function Generated(props: GeneratedProps) {
   return (
-    <div className="custom-section">
+        <html><head></head><body><div className="custom-section">
       <header className="header">
         <nav className="nav">
           <div className="nav-item">{props.text1 ?? "Home"}</div>
@@ -30,5 +28,7 @@ export default function Generated(props: GeneratedProps) {
         <p>{props.text6 ?? "© 2024 Your App"}</p>
       </footer>
     </div>
+    
+    </body></html>
   )
 }

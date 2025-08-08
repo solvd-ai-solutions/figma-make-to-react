@@ -1,153 +1,169 @@
-# Figma Make to React Converter
+# 🎨 Figma Make → React Converter
 
-Transform Figma Make designs into pixel-perfect React applications automatically! 🚀
+Convert your Figma Make designs into pixel-perfect React applications with automatic TypeScript support, Storybook integration, and deployment-ready code.
 
-## 🎯 Features
+## ✨ Features
 
-- **Drag & Drop Interface**: Upload Figma exports directly through a web interface
-- **Pixel-Perfect Conversion**: Maintains exact design fidelity
-- **Auto-Open in Cursor**: Seamlessly opens converted projects in Cursor IDE
-- **Desktop App**: Native macOS app for easy access
-- **TypeScript Support**: Full type safety for generated components
-- **Tailwind CSS**: Modern, responsive styling
-- **Asset Optimization**: Automatic image optimization and WebP conversion
-- **Storybook Integration**: Component documentation and testing
-- **Accessibility**: Built-in a11y checks and improvements
+- **Drag & Drop Interface**: Upload Figma Make exports directly through the web interface
+- **Pixel-Perfect Conversion**: Maintains exact spacing, colors, typography, and layout
+- **TypeScript Support**: Auto-generated typed props for all components
+- **Storybook Integration**: Interactive component stories for testing
+- **Asset Optimization**: Automatic image optimization and SVG processing
+- **Deployment Ready**: One-click deployment to Vercel
+- **Desktop App**: Native desktop application for easy access
 
 ## 🚀 Quick Start
 
-### Web Interface
+### Option 1: Web Interface
+1. Visit the live app: [Figma Make Converter](https://your-app.vercel.app)
+2. Drag & drop your Figma Make export (ZIP or folder)
+3. Watch the conversion process in real-time
+4. Preview your React components instantly
+
+### Option 2: Desktop App
+1. Download the desktop app from the releases
+2. Launch the app and upload your Figma Make export
+3. The app will automatically open in Cursor for editing
+
+### Option 3: Local Development
 ```bash
+# Clone the repository
+git clone https://github.com/yourusername/figma-make-to-react.git
+cd figma-make-to-react
+
+# Install dependencies
+npm install
+
+# Start the development server
 npm run dev
+
 # Open http://127.0.0.1:3001
-```
-
-### Desktop App
-```bash
-# Build the native macOS app
-npm run build-app
-
-# Install to Applications
-cp -r dist/mac/Figma\ Converter.app /Applications/
-
-# Run the app
-open dist/mac/Figma\ Converter.app
 ```
 
 ## 📁 Project Structure
 
 ```
-figma-project/
-├── figma-exports/          # Your Figma Make exports
-│   ├── assets/            # Images, SVGs, etc.
-│   └── code/              # HTML files
+figma-make-to-react/
 ├── src/
+│   ├── app/                    # Next.js app router
+│   │   ├── api/               # API routes
+│   │   ├── upload/            # Upload interface
+│   │   └── preview/           # Component preview
 │   ├── components/
-│   │   ├── generated/     # Auto-generated React components
-│   │   └── ui/           # Shared UI components
-│   ├── app/              # Next.js app router
-│   └── generated/        # Auto-generated files
-├── scripts/              # Conversion pipeline
-└── electron/             # Desktop app files
+│   │   ├── generated/         # Auto-generated components
+│   │   └── ui/               # Reusable UI components
+│   └── styles/               # Global styles and themes
+├── figma-exports/            # Uploaded Figma files
+├── public/                   # Static assets
+├── scripts/                  # Build and conversion scripts
+└── electron/                 # Desktop app
 ```
 
-## 🔧 Available Scripts
+## 🎯 Usage
 
-### Core Conversion
-- `npm run build-all` - Complete conversion pipeline
-- `npm run convert` - Convert Figma HTML to React
-- `npm run assets` - Optimize images and assets
-- `npm run icons` - Build SVG icon registry
+### 1. Export from Figma Make
+- In Figma Make, go to **Export → Download "Code"**
+- This will give you a ZIP file with CSS and assets
 
-### Development
-- `npm run dev` - Start web interface
-- `npm run storybook` - Component documentation
-- `npm run test` - Run tests
-- `npm run format` - Format code
+### 2. Upload and Convert
+- Drag the ZIP file or folder into the upload area
+- The converter will:
+  - Extract CSS and assets
+  - Generate HTML structure from CSS
+  - Convert to React components
+  - Create TypeScript interfaces
+  - Generate Storybook stories
 
-### Desktop App
-- `npm run build-app` - Build native macOS app
-- `npm run electron-dev` - Run in development mode
-- `npm run electron-dist` - Create distributable
+### 3. Preview and Customize
+- View components in the preview page
+- Test interactions in Storybook
+- Edit components in Cursor (auto-opens)
 
-## 🎨 How It Works
+### 4. Deploy
+- Push to GitHub
+- Connect to Vercel for automatic deployment
+- Your app is live! 🎉
 
-1. **Upload**: Drag your Figma Make export (ZIP file) to the web interface
-2. **Process**: The system extracts files and runs the conversion pipeline
-3. **Convert**: HTML is transformed into React components with Tailwind CSS
-4. **Optimize**: Images are converted to WebP/AVIF and optimized
-5. **Generate**: TypeScript types, Storybook stories, and documentation
-6. **Open**: Automatically opens the converted project in Cursor IDE
+## 🛠️ Development
 
-## 🛠️ Conversion Features
+### Prerequisites
+- Node.js 18+
+- npm or yarn
+- Git
 
-- **Smart Class Mapping**: Maps Figma classes to Tailwind utilities
-- **Responsive Design**: Maintains responsive behavior
-- **Type Safety**: Generates TypeScript interfaces for props
-- **CSS Modules**: Handles complex styles not covered by Tailwind
-- **Grid System**: Preserves layout structure and spacing
-- **Semantic HTML**: Converts to proper semantic elements
-- **Asset Management**: Optimizes and organizes images/icons
+### Scripts
+```bash
+npm run dev          # Start development server
+npm run build        # Build for production
+npm run storybook    # Start Storybook
+npm run electron     # Launch desktop app
+npm run test         # Run tests
+```
+
+### Environment Variables
+Create a `.env.local` file:
+```env
+NEXT_PUBLIC_APP_URL=http://localhost:3001
+```
+
+## 🎨 Generated Components
+
+The converter creates React components with:
+- **TypeScript interfaces** for all props
+- **CSS Modules** for scoped styling
+- **Storybook stories** for testing
+- **Accessibility features** built-in
+- **Responsive design** support
+
+Example generated component:
+```tsx
+export interface GeneratedProps {
+  text1?: string;
+  text2?: string;
+  text3?: string;
+  text4?: string;
+  text5?: string;
+  text6?: string;
+}
+
+export default function Generated(props: GeneratedProps) {
+  return (
+    <div className="custom-section">
+      <header className="header">
+        <nav className="nav">
+          <div className="nav-item">{props.text1 ?? "Home"}</div>
+          <div className="nav-item">{props.text2 ?? "About"}</div>
+          <div className="nav-item">{props.text3 ?? "Contact"}</div>
+        </nav>
+      </header>
+      <main className="main">
+        <section className="hero">
+          <h1 className="title">{props.text4 ?? "Welcome"}</h1>
+          <p className="subtitle">{props.text5 ?? "Built with Figma Make"}</p>
+        </section>
+      </main>
+    </div>
+  )
+}
+```
 
 ## 🚀 Deployment
 
 ### Vercel (Recommended)
-```bash
-# Deploy to Vercel
-vercel --prod
-```
+1. Push your code to GitHub
+2. Connect your repository to Vercel
+3. Deploy automatically on every push
 
-### Manual Build
+### Manual Deployment
 ```bash
+# Build the project
 npm run build
-npm start
+
+# Export static files
+npm run export
+
+# Deploy to your preferred platform
 ```
-
-## 🧪 Testing
-
-```bash
-# Run tests
-npm run test
-
-# Run Storybook
-npm run storybook
-
-# Accessibility audit
-npm run a11y
-```
-
-## 📱 Desktop App
-
-The desktop app provides a native macOS experience:
-
-- **Dock Icon**: Keep it in your dock for quick access
-- **Native Menus**: Standard macOS application menus
-- **Keyboard Shortcuts**: Cmd+Q to quit, etc.
-- **Window Management**: Native window controls
-- **Auto-Updates**: Built-in update mechanism
-
-### Building the Desktop App
-
-```bash
-# Install dependencies
-npm install
-
-# Build the app
-npm run build-app
-
-# Install to Applications
-cp -r dist/mac/Figma\ Converter.app /Applications/
-```
-
-## 🔧 Configuration
-
-### Environment Variables
-- `OPENAI_API_KEY` - For AI-powered enhancements (optional)
-
-### Customization
-- Modify `scripts/convert-figma.mjs` for custom conversion rules
-- Update `tailwind.config.js` for custom styling
-- Edit `electron/main.js` for desktop app behavior
 
 ## 🤝 Contributing
 
@@ -159,7 +175,14 @@ cp -r dist/mac/Figma\ Converter.app /Applications/
 
 ## 📄 License
 
-MIT License - see LICENSE file for details.
+MIT License - see [LICENSE](LICENSE) for details.
+
+## 🙏 Acknowledgments
+
+- Built with [Next.js](https://nextjs.org/)
+- Styled with [Tailwind CSS](https://tailwindcss.com/)
+- Component stories with [Storybook](https://storybook.js.org/)
+- Desktop app with [Electron](https://electronjs.org/)
 
 ---
 

@@ -30,7 +30,11 @@
     "electron-build": "npm run build && electron-builder",
     "electron-pack": "electron-builder --dir",
     "electron-dist": "electron-builder",
-    "build-app": "node scripts/build-app.mjs"
+    "build-app": "node scripts/build-app.mjs",
+    "deploy": "npm run build && vercel --prod",
+    "deploy:preview": "npm run build && vercel",
+    "export": "npm run build && next export",
+    "prepare": "husky install"
   },
   "dependencies": {
     "next": "14.2.5",

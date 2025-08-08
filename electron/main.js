@@ -2,6 +2,8 @@ const { app, BrowserWindow, Menu, shell } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
 const net = require('net');
+const fs = require('fs');
+const { pathToFileURL } = require('url');
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
 
 let mainWindow;
@@ -29,21 +31,42 @@ function waitForPort(port, host = '127.0.0.1', timeoutMs = 30000) {
 }
 
 async function ensureNextServer() {
-  const cwd = path.resolve(__dirname, '..');
+  const projectRoot = path.resolve(__dirname, '..');
   const port = 3001;
   const host = '127.0.0.1';
-  try {
-    // If already up, just continue
-    await waitForPort(port, host, 2000);
-    return { url: `http://${host}:${port}` };
-  } catch {}
 
-  const cmd = isDev ? 'npm' : 'npm';
-  const args = isDev ? ['run', 'dev'] : ['run', 'start'];
-  serverProcess = spawn(cmd, args, { cwd, env: { ...process.env }, stdio: 'ignore' });
+  if (isDev) {
+    try {
+      await waitForPort(port, host, 2000);
+      return { type: 'http', url: `http://${host}:${port}` };
+    } catch {}
+
+    serverProcess = spawn('npm', ['run', 'dev'], { cwd: projectRoot, env: { ...process.env }, stdio: 'ignore' });
+    serverProcess.unref();
+    await waitForPort(port, host, 30000);
+    return { type: 'http', url: `http://${host}:${port}` };
+  }
+
+  // Production: prefer static export if present
+  const outDir = path.join(projectRoot, 'out');
+  const uploadHtml = path.join(outDir, 'upload', 'index.html');
+  const rootHtml = path.join(outDir, 'index.html');
+  if (fs.existsSync(uploadHtml)) {
+    return { type: 'file', fileUrl: pathToFileURL(uploadHtml).toString() };
+  }
+  if (fs.existsSync(rootHtml)) {
+    return { type: 'file', fileUrl: pathToFileURL(rootHtml).toString() };
+  }
+
+  // Fallback: attempt to start Next.js server if available
+  try {
+    await waitForPort(port, host, 2000);
+    return { type: 'http', url: `http://${host}:${port}` };
+  } catch {}
+  serverProcess = spawn('npm', ['run', 'start'], { cwd: projectRoot, env: { ...process.env }, stdio: 'ignore' });
   serverProcess.unref();
   await waitForPort(port, host, 30000);
-  return { url: `http://${host}:${port}` };
+  return { type: 'http', url: `http://${host}:${port}` };
 }
 
 function createWindow() {
@@ -65,9 +88,13 @@ function createWindow() {
 
   // Ensure Next.js server is running, then load the app
   ensureNextServer()
-    .then(({ url }) => {
-      const startUrl = `${url}/upload`;
-      mainWindow.loadURL(startUrl);
+    .then((info) => {
+      if (info.type === 'file') {
+        mainWindow.loadURL(info.fileUrl);
+      } else {
+        const startUrl = `${info.url}/upload`;
+        mainWindow.loadURL(startUrl);
+      }
     })
     .catch((err) => {
       const msg = `Failed to start Next.js server: ${err.message}`;

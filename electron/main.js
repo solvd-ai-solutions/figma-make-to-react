@@ -49,11 +49,7 @@ async function ensureNextServer() {
 
   // Production: prefer static export if present
   const outDir = path.join(projectRoot, 'out');
-  const uploadHtml = path.join(outDir, 'upload', 'index.html');
   const rootHtml = path.join(outDir, 'index.html');
-  if (fs.existsSync(uploadHtml)) {
-    return { type: 'file', fileUrl: pathToFileURL(uploadHtml).toString() };
-  }
   if (fs.existsSync(rootHtml)) {
     return { type: 'file', fileUrl: pathToFileURL(rootHtml).toString() };
   }
@@ -92,8 +88,7 @@ function createWindow() {
       if (info.type === 'file') {
         mainWindow.loadURL(info.fileUrl);
       } else {
-        const startUrl = `${info.url}/upload`;
-        mainWindow.loadURL(startUrl);
+        mainWindow.loadURL(info.url);
       }
     })
     .catch((err) => {

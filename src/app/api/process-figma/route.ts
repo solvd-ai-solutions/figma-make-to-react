@@ -5,6 +5,10 @@ import os from 'os'
 import crypto from 'crypto'
 import AdmZip from 'adm-zip'
 
+// Ensure this route runs on Node.js runtime with dynamic responses (better for SSE)
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+
 export async function POST(request: NextRequest) {
   const encoder = new TextEncoder()
   

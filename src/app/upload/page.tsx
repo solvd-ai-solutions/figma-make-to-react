@@ -8,6 +8,8 @@ export default function UploadPage() {
   const [progress, setProgress] = useState('')
   const [completed, setCompleted] = useState(false)
   const [error, setError] = useState('')
+  const [downloadUrl, setDownloadUrl] = useState<string>('')
+  const [downloadName, setDownloadName] = useState<string>('figma-react.zip')
   const [debugFiles, setDebugFiles] = useState<{ accepted: string[]; rejected: string[] }>({ accepted: [], rejected: [] })
 
   const folderInputRef = useRef<HTMLInputElement>(null)
@@ -56,6 +58,10 @@ export default function UploadPage() {
             const data = JSON.parse(line.slice(6))
             setProgress(data.message)
             if (data.completed) setCompleted(true)
+            if (data.downloadBase64) {
+              setDownloadUrl(data.downloadBase64 as string)
+              if (data.downloadName) setDownloadName(data.downloadName as string)
+            }
           }
         }
       }
@@ -170,10 +176,18 @@ export default function UploadPage() {
             <div className="mt-4 p-6 bg-green-50 border border-green-200 rounded-lg">
               <div className="text-center space-y-4">
                 <p className="text-green-700 font-medium text-lg">✅ Conversion Complete!</p>
-                <p className="text-green-600 text-sm mb-4">🎯 Your project should now be open in a new Cursor window for editing!</p>
+                <p className="text-green-600 text-sm mb-4">🎯 Download the generated React code and open it in Cursor.</p>
                 <div className="space-x-4">
+                  {downloadUrl && (
+                    <a
+                      href={downloadUrl}
+                      download={downloadName}
+                      className="inline-block bg-emerald-600 text-white px-6 py-3 rounded-lg hover:bg-emerald-700 transition-colors"
+                    >
+                      ⬇️ Download Generated Code
+                    </a>
+                  )}
                   <a href="/preview" className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors">🚀 Preview Your App</a>
-                  <a href="http://localhost:6006" target="_blank" className="inline-block bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors">📚 View Components</a>
                   <button onClick={() => window.location.reload()} className="inline-block bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors">🔄 Convert Another</button>
                 </div>
               </div>

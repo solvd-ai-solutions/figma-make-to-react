@@ -1,11 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { promises as fs } from 'fs'
 import path from 'path'
-import { exec } from 'child_process'
-import { promisify } from 'util'
+import os from 'os'
+import crypto from 'crypto'
 import AdmZip from 'adm-zip'
-
-const execAsync = promisify(exec)
 
 export async function POST(request: NextRequest) {
   const encoder = new TextEncoder()
@@ -28,25 +26,14 @@ export async function POST(request: NextRequest) {
           throw new Error('No files uploaded')
         }
 
-        // Clear existing exports
-        const codeDir = path.join(process.cwd(), 'figma-exports', 'code')
-        const assetsDir = path.join(process.cwd(), 'figma-exports', 'assets')
-        
+        // Use a serverless-safe temp working directory
+        const workId = crypto.randomUUID()
+        const workDir = path.join(os.tmpdir(), `figma-${workId}`)
+        const codeDir = path.join(workDir, 'code')
+        const assetsDir = path.join(workDir, 'assets')
+
         await fs.mkdir(codeDir, { recursive: true })
         await fs.mkdir(assetsDir, { recursive: true })
-
-        // Clear previous files
-        try {
-          const codeFiles = await fs.readdir(codeDir)
-          const assetFiles = await fs.readdir(assetsDir)
-          
-          await Promise.all([
-            ...codeFiles.map(file => fs.unlink(path.join(codeDir, file))),
-            ...assetFiles.map(file => fs.unlink(path.join(assetsDir, file)))
-          ])
-        } catch (err) {
-          // Directory might be empty, that's ok
-        }
 
         sendProgress('Extracting files...')
 
@@ -103,37 +90,41 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        sendProgress('Building design tokens...')
-        await execAsync('npm run tokens', { cwd: process.cwd() })
-
-        sendProgress('Processing icons...')
-        await execAsync('npm run icons', { cwd: process.cwd() })
-
+        // Build a minimal React component from the generated HTML/CSS
         sendProgress('Converting to React components...')
-        await execAsync('npm run convert', { cwd: process.cwd() })
+        const cssFilesAfter = await fs.readdir(codeDir)
+        const cssFileName = cssFilesAfter.find(f => f.endsWith('.css')) || 'styles.css'
+        const cssPath = path.join(codeDir, cssFileName)
+        const cssContent = await safeRead(cssPath)
 
-        sendProgress('Optimizing assets...')
-        await execAsync('npm run assets', { cwd: process.cwd() })
+        const generatedHtmlPath = path.join(codeDir, 'generated.html')
+        const htmlContent = await safeRead(generatedHtmlPath)
+        const componentTsx = generateComponentFromHtml(htmlContent)
 
-        sendProgress('Running quality checks...')
-        await execAsync('npm run qa', { cwd: process.cwd() })
-
-        sendProgress('Generating component stories...')
-        await execAsync('npm run stories', { cwd: process.cwd() })
-
-        sendProgress('Opening project in Cursor...')
-        
-        // Open the project in a new Cursor window
-        try {
-          await execAsync(`open -a "Cursor" "${process.cwd()}"`, { cwd: process.cwd() })
-          sendProgress('✅ Project opened in Cursor!')
-        } catch (error) {
-          // Fallback to opening the directory in Finder
-          await execAsync(`open "${process.cwd()}"`, { cwd: process.cwd() })
-          sendProgress('✅ Project directory opened!')
+        // Create a zip with component + css + assets
+        sendProgress('Packaging results...')
+        const zip = new AdmZip()
+        zip.addFile('src/components/generated/Generated.tsx', Buffer.from(componentTsx, 'utf-8'))
+        if (cssContent) {
+          zip.addFile('src/styles/figma.css', Buffer.from(cssContent, 'utf-8'))
         }
+        try {
+          const assetFiles = await fs.readdir(assetsDir)
+          for (const file of assetFiles) {
+            const fileBuf = await fs.readFile(path.join(assetsDir, file))
+            zip.addFile(`public/images/${file}`, fileBuf)
+          }
+        } catch {}
 
-        sendProgress('🎉 Conversion complete! Your React app is ready and open in Cursor!', true)
+        const zipBuffer = zip.toBuffer()
+        const base64 = zipBuffer.toString('base64')
+        sendProgress('🎉 Conversion complete! Download your generated React code below.', true)
+        // Send a final message with a data URL for download
+        controller.enqueue(
+          encoder.encode(
+            `data: ${JSON.stringify({ downloadBase64: `data:application/zip;base64,${base64}`, downloadName: 'figma-react.zip' })}\n\n`
+          )
+        )
         
         controller.close()
       } catch (error) {

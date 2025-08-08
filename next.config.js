@@ -1,10 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export',
-  trailingSlash: true,
   images: {
-    unoptimized: true
-  }
+    // Keep unoptimized to avoid remote config; Vercel will still serve images
+    unoptimized: true,
+  },
 }
 
 module.exports = nextConfig

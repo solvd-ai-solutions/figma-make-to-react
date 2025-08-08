@@ -1,8 +1,50 @@
 const { app, BrowserWindow, Menu, shell } = require('electron');
 const path = require('path');
-const isDev = process.env.NODE_ENV === 'development';
+const { spawn } = require('child_process');
+const net = require('net');
+const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
 
 let mainWindow;
+let serverProcess;
+
+function waitForPort(port, host = '127.0.0.1', timeoutMs = 30000) {
+  const start = Date.now();
+  return new Promise((resolve, reject) => {
+    const tryConnect = () => {
+      const socket = net.connect(port, host, () => {
+        socket.end();
+        resolve(true);
+      });
+      socket.on('error', () => {
+        socket.destroy();
+        if (Date.now() - start > timeoutMs) {
+          reject(new Error(`Timed out waiting for ${host}:${port}`));
+        } else {
+          setTimeout(tryConnect, 500);
+        }
+      });
+    };
+    tryConnect();
+  });
+}
+
+async function ensureNextServer() {
+  const cwd = path.resolve(__dirname, '..');
+  const port = 3001;
+  const host = '127.0.0.1';
+  try {
+    // If already up, just continue
+    await waitForPort(port, host, 2000);
+    return { url: `http://${host}:${port}` };
+  } catch {}
+
+  const cmd = isDev ? 'npm' : 'npm';
+  const args = isDev ? ['run', 'dev'] : ['run', 'start'];
+  serverProcess = spawn(cmd, args, { cwd, env: { ...process.env }, stdio: 'ignore' });
+  serverProcess.unref();
+  await waitForPort(port, host, 30000);
+  return { url: `http://${host}:${port}` };
+}
 
 function createWindow() {
   // Create the browser window
@@ -21,10 +63,16 @@ function createWindow() {
     show: false, // Don't show until ready
   });
 
-  // Load the app - always use the web version for now
-  const startUrl = 'http://127.0.0.1:3001/upload';
-  
-  mainWindow.loadURL(startUrl);
+  // Ensure Next.js server is running, then load the app
+  ensureNextServer()
+    .then(({ url }) => {
+      const startUrl = `${url}/upload`;
+      mainWindow.loadURL(startUrl);
+    })
+    .catch((err) => {
+      const msg = `Failed to start Next.js server: ${err.message}`;
+      mainWindow.loadURL(`data:text/plain,${encodeURIComponent(msg)}`);
+    });
 
   // Show window when ready
   mainWindow.once('ready-to-show', () => {
@@ -122,6 +170,10 @@ app.whenReady().then(() => {
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
+  }
+  if (serverProcess) {
+    try { serverProcess.kill(); } catch {}
+    serverProcess = null;
   }
 });
 

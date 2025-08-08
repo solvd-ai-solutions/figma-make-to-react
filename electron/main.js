@@ -41,8 +41,14 @@ async function ensureNextServer() {
       return { type: 'http', url: `http://${host}:${port}` };
     } catch {}
 
-    serverProcess = spawn('npm', ['run', 'dev'], { cwd: projectRoot, env: { ...process.env }, stdio: 'ignore' });
-    serverProcess.unref();
+  serverProcess = spawn('npm', ['run', 'dev'], { cwd: projectRoot, env: { ...process.env }, stdio: isDev ? 'pipe' : 'ignore' });
+  if (serverProcess.stdout) {
+    serverProcess.stdout.on('data', (d) => console.log('[next]', String(d).trim()));
+  }
+  if (serverProcess.stderr) {
+    serverProcess.stderr.on('data', (d) => console.error('[next]', String(d).trim()));
+  }
+  serverProcess.unref();
     await waitForPort(port, host, 30000);
     return { type: 'http', url: `http://${host}:${port}` };
   }
@@ -105,6 +111,17 @@ function createWindow() {
       mainWindow.webContents.openDevTools();
     }
   });
+
+  // Debug loading
+  mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
+    console.error('did-fail-load', { errorCode, errorDescription, validatedURL })
+  })
+  mainWindow.webContents.on('did-finish-load', () => {
+    console.log('did-finish-load', mainWindow.webContents.getURL())
+  })
+  mainWindow.webContents.on('did-navigate', (_e, url) => {
+    console.log('did-navigate', url)
+  })
 
   // Handle window closed
   mainWindow.on('closed', () => {

@@ -33,8 +33,7 @@
     "build-app": "node scripts/build-app.mjs",
     "deploy": "npm run build && vercel --prod",
     "deploy:preview": "npm run build && vercel",
-    "export": "npm run build && next export",
-    "prepare": "husky install"
+    "export": "npm run build && next export"
   },
   "dependencies": {
     "next": "14.2.5",

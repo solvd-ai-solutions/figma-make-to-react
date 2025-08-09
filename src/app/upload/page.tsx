@@ -13,6 +13,7 @@ export default function UploadPage() {
   const [debugFiles, setDebugFiles] = useState<{ accepted: string[]; rejected: string[] }>({ accepted: [], rejected: [] })
 
   const folderInputRef = useRef<HTMLInputElement>(null)
+  const zipInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const el = folderInputRef.current
@@ -24,6 +25,18 @@ export default function UploadPage() {
       el.setAttribute('multiple', '')
     } catch {}
   }, [])
+
+  // Auto-download when complete
+  useEffect(() => {
+    if (completed && downloadUrl) {
+      const a = document.createElement('a')
+      a.href = downloadUrl
+      a.download = downloadName
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+    }
+  }, [completed, downloadUrl, downloadName])
 
   const processFiles = useCallback(async (acceptedFiles: File[]) => {
     console.log('Files to process:', acceptedFiles.map(f => ({ name: f.name, type: f.type, size: f.size })))
@@ -80,6 +93,13 @@ export default function UploadPage() {
     e.target.value = ''
   }, [processFiles])
 
+  const onZipSelect = useCallback((e: ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    setDebugFiles({ accepted: files.map(f => f.name), rejected: [] })
+    void processFiles(files)
+    e.target.value = ''
+  }, [processFiles])
+
   const { getRootProps, getInputProps, isDragActive, isDragReject } = useDropzone({
     // Let users drop entire folders; file-selector used by react-dropzone will recurse
     onDrop: (acceptedFiles, fileRejections) => {
@@ -128,6 +148,13 @@ export default function UploadPage() {
               className="hidden"
               onChange={onFolderSelect}
             />
+            <input
+              type="file"
+              ref={zipInputRef}
+              accept=".zip"
+              className="hidden"
+              onChange={onZipSelect}
+            />
 
             {isProcessing ? (
               <div className="space-y-4">
@@ -148,6 +175,14 @@ export default function UploadPage() {
                     className="mt-3 inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
                   >
                     Choose Folder
+                  </button>
+                  <p className="text-gray-500 mt-6">Or one‑click with a ZIP:</p>
+                  <button
+                    type="button"
+                    onClick={() => zipInputRef.current?.click()}
+                    className="mt-3 inline-block bg-emerald-600 text-white px-6 py-3 rounded-lg hover:bg-emerald-700 transition-colors"
+                  >
+                    One‑Click Convert (Choose ZIP)
                   </button>
                 </div>
               </div>

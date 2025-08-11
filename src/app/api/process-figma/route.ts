@@ -105,9 +105,18 @@ export async function POST(request: NextRequest) {
         const htmlContent = await safeRead(generatedHtmlPath)
         const componentTsx = generateComponentFromHtml(htmlContent)
 
-        // Create a zip with component + css + assets
+        // Create a zip with a FULL runnable Next.js project scaffold
         sendProgress('Packaging results...')
         const zip = new AdmZip()
+        // Project scaffold
+        zip.addFile('package.json', Buffer.from(createPackageJson(), 'utf-8'))
+        zip.addFile('tsconfig.json', Buffer.from(createTsconfigJson(), 'utf-8'))
+        zip.addFile('next.config.js', Buffer.from(createNextConfig(), 'utf-8'))
+        zip.addFile('README.md', Buffer.from(createReadme(), 'utf-8'))
+        zip.addFile('src/app/layout.tsx', Buffer.from(createLayoutTsx(), 'utf-8'))
+        zip.addFile('src/app/page.tsx', Buffer.from(createPageTsx(), 'utf-8'))
+
+        // Generated code and assets
         zip.addFile('src/components/generated/Generated.tsx', Buffer.from(componentTsx, 'utf-8'))
         if (cssContent) {
           zip.addFile('src/styles/figma.css', Buffer.from(cssContent, 'utf-8'))
@@ -122,11 +131,11 @@ export async function POST(request: NextRequest) {
 
         const zipBuffer = zip.toBuffer()
         const base64 = zipBuffer.toString('base64')
-        sendProgress('🎉 Conversion complete! Download your generated React code below.', true)
+        sendProgress('🎉 Conversion complete! Download your generated React project below.', true)
         // Send a final message with a data URL for download
         controller.enqueue(
           encoder.encode(
-            `data: ${JSON.stringify({ downloadBase64: `data:application/zip;base64,${base64}`, downloadName: 'figma-react.zip' })}\n\n`
+            `data: ${JSON.stringify({ downloadBase64: `data:application/zip;base64,${base64}`, downloadName: 'figma-react-project.zip' })}\n\n`
           )
         )
         
@@ -224,4 +233,77 @@ function generateComponentFromHtml(inputHtml: string): string {
   const jsx = inner || '<div className="app">Generated component</div>'
   const tsx = `import React from 'react'\n\nexport interface GeneratedProps { [key: string]: unknown }\n\nexport default function Generated(props: GeneratedProps) {\n  return (\n    <>\n${jsx.split('\n').map(l => '      ' + l).join('\n')}\n    </>\n  )\n}\n`
   return tsx
+}
+
+// Scaffold creators
+function createPackageJson(): string {
+  return JSON.stringify(
+    {
+      name: 'figma-react-project',
+      private: true,
+      version: '0.1.0',
+      scripts: {
+        dev: 'next dev -H 127.0.0.1 -p 3000',
+        build: 'next build',
+        start: 'next start'
+      },
+      dependencies: {
+        next: '14.2.5',
+        react: '18.3.1',
+        'react-dom': '18.3.1'
+      },
+      devDependencies: {
+        typescript: '5.4.5',
+        '@types/node': '20.14.10',
+        '@types/react': '18.3.3',
+        '@types/react-dom': '18.3.0'
+      }
+    },
+    null,
+    2
+  )
+}
+
+function createTsconfigJson(): string {
+  return JSON.stringify(
+    {
+      compilerOptions: {
+        target: 'ES2021',
+        lib: ['ES2021', 'DOM', 'DOM.Iterable'],
+        jsx: 'preserve',
+        module: 'ESNext',
+        moduleResolution: 'Bundler',
+        strict: true,
+        baseUrl: '.',
+        paths: {
+          '@/*': ['src/*']
+        },
+        allowJs: false,
+        resolveJsonModule: true,
+        isolatedModules: true,
+        noEmit: true,
+        incremental: true
+      },
+      include: ['next-env.d.ts', '**/*.ts', '**/*.tsx'],
+      exclude: ['node_modules']
+    },
+    null,
+    2
+  )
+}
+
+function createNextConfig(): string {
+  return `/** @type {import('next').NextConfig} */\nconst nextConfig = {\n  images: { unoptimized: true }\n}\n\nmodule.exports = nextConfig\n`
+}
+
+function createReadme(): string {
+  return `# Figma → React (Generated)\n\nQuick start:\n\n\n1. npm install\n2. npm run dev\n3. Open http://127.0.0.1:3000\n\nEdit \'src/components/generated/Generated.tsx\' and \'src/styles/figma.css\'.\n`
+}
+
+function createLayoutTsx(): string {
+  return `import React from 'react'\nimport '../styles/figma.css'\n\nexport const metadata = { title: 'Figma → React' }\n\nexport default function RootLayout({ children }: { children: React.ReactNode }) {\n  return (\n    <html lang=\"en\">\n      <body>{children}</body>\n    </html>\n  )\n}\n`
+}
+
+function createPageTsx(): string {
+  return `import Generated from '@/components/generated/Generated'\n\nexport default function Page() {\n  return (\n    <main style={{ padding: 24 }}>\n      <Generated />\n    </main>\n  )\n}\n`
 }

@@ -1,6 +1,8 @@
 import { promises as fs } from 'fs'
 import path from 'path'
 import { load } from 'cheerio'
+import prettier from 'prettier'
+import prettier from 'prettier'
 
 // Cheerio-based converter: parses HTML, normalizes attributes for JSX,
 // and emits TSX components under src/components/generated.
@@ -30,10 +32,12 @@ async function loadTokens() {
 }
 
 function parseArgs(argv) {
-  const args = { mode: 'hybrid', format: false }
+  const args = { mode: 'hybrid', format: false, verbose: false, svg: 'auto' }
   for (const a of argv.slice(2)) {
     if (a.startsWith('--mode=')) args.mode = a.split('=')[1]
     else if (a === '--format') args.format = true
+    else if (a === '--verbose') args.verbose = true
+    else if (a.startsWith('--svg=')) args.svg = a.split('=')[1]
   }
   return args
 }
@@ -79,7 +83,7 @@ function finalizeJsx(html) {
   return out
 }
 
-function transformHtmlToJsx(inputHtml, mapping, componentName, tokens, mode) {
+function transformHtmlToJsx(inputHtml, mapping, componentName, tokens, mode, svgStrategy) {
   const $ = load(inputHtml, { xmlMode: false, decodeEntities: false })
 
   // Extract only the body content, not the full HTML document
@@ -97,12 +101,14 @@ function transformHtmlToJsx(inputHtml, mapping, componentName, tokens, mode) {
   let styleCounter = 0
   let textCounter = 0
   let imageCounter = 0
+  let residualStyleCount = 0
 
   const props = {
     texts: [], // { token, default }
     images: [], // { token, src, alt, width, height, className }
   }
 
+  const unknownClasses = new Set()
   $body('*').each((_, el) => {
     const $el = $body(el)
     const attribs = el.attribs || {}
@@ -146,6 +152,7 @@ function transformHtmlToJsx(inputHtml, mapping, componentName, tokens, mode) {
           mapped.push(...String(rep).split(/\s+/).filter(Boolean))
         } else if (mapping.preserveUnknown) {
           mapped.push(c)
+          unknownClasses.add(c)
         }
       }
       if (mapped.length) $el.attr('className', mapped.join(' '))
@@ -211,6 +218,29 @@ function transformHtmlToJsx(inputHtml, mapping, componentName, tokens, mode) {
       }
 
       const filtered = []
+      const pxToStep = (px) => {
+        const n = parseFloat(String(px).replace('px',''))
+        const map = new Map([[0, '0'], [1, '0.5']]) // 1px -> 0.5 (approx)
+        const step = (n % 4 === 0) ? String(n / 4) : map.get(n)
+        return step
+      }
+
+      const addSpacing = (prop, val) => {
+        const step = pxToStep(val)
+        if (!step) return false
+        if (prop === 'margin') tailwindClasses.push(`m-${step}`)
+        if (prop === 'margin-top') tailwindClasses.push(`mt-${step}`)
+        if (prop === 'margin-bottom') tailwindClasses.push(`mb-${step}`)
+        if (prop === 'margin-left') tailwindClasses.push(`ml-${step}`)
+        if (prop === 'margin-right') tailwindClasses.push(`mr-${step}`)
+        if (prop === 'padding') tailwindClasses.push(`p-${step}`)
+        if (prop === 'padding-top') tailwindClasses.push(`pt-${step}`)
+        if (prop === 'padding-bottom') tailwindClasses.push(`pb-${step}`)
+        if (prop === 'padding-left') tailwindClasses.push(`pl-${step}`)
+        if (prop === 'padding-right') tailwindClasses.push(`pr-${step}`)
+        return true
+      }
+
       for (const [k, v] of decls) {
         const val = String(v).toLowerCase()
         if (k === 'color' && colorByValue[val]) {
@@ -219,6 +249,66 @@ function transformHtmlToJsx(inputHtml, mapping, componentName, tokens, mode) {
         }
         if ((k === 'background' || k === 'background-color') && colorByValue[val]) {
           tailwindClasses.push(`bg-${colorByValue[val]}`)
+          continue
+        }
+        if (k === 'display') {
+          if (val.includes('flex')) tailwindClasses.push('flex')
+          else if (val === 'block') tailwindClasses.push('block')
+          else if (val === 'inline-block') tailwindClasses.push('inline-block')
+          continue
+        }
+        if (k === 'text-align') {
+          const ta = val.replace(/\s+/g, '')
+          if (['left','center','right','justify'].includes(ta)) tailwindClasses.push(`text-${ta}`)
+          continue
+        }
+        if (k === 'justify-content') {
+          const map = { center: 'center', 'space-between': 'between', 'space-around': 'around', 'space-evenly': 'evenly', start: 'start', end: 'end', left:'start', right:'end' }
+          const m = map[val]
+          if (m) tailwindClasses.push(`justify-${m}`)
+          continue
+        }
+        if (k === 'align-items') {
+          const map = { center: 'center', start: 'start', end: 'end', stretch: 'stretch', baseline: 'baseline' }
+          const m = map[val]
+          if (m) tailwindClasses.push(`items-${m}`)
+          continue
+        }
+        if (k === 'gap') {
+          const step = pxToStep(val)
+          if (step) { tailwindClasses.push(`gap-${step}`); continue }
+        }
+        if (k === 'width') {
+          const step = pxToStep(val)
+          if (step) { tailwindClasses.push(`w-${step}`); continue }
+          tailwindClasses.push(`w-[${val}]`)
+          continue
+        }
+        if (k === 'height') {
+          const step = pxToStep(val)
+          if (step) { tailwindClasses.push(`h-${step}`); continue }
+          tailwindClasses.push(`h-[${val}]`)
+          continue
+        }
+        if (k.startsWith('margin') || k.startsWith('padding')) {
+          if (addSpacing(k, val)) continue
+        }
+        if (k === 'border-radius') {
+          if (val.includes('%')) { tailwindClasses.push('rounded-full'); continue }
+          const n = parseFloat(val)
+          if (!Number.isNaN(n)) {
+            if (n <= 2) tailwindClasses.push('rounded-sm')
+            else if (n <= 6) tailwindClasses.push('rounded')
+            else if (n <= 10) tailwindClasses.push('rounded-md')
+            else if (n <= 14) tailwindClasses.push('rounded-lg')
+            else if (n <= 20) tailwindClasses.push('rounded-xl')
+            else tailwindClasses.push('rounded-2xl')
+            continue
+          }
+        }
+        if (k === 'box-shadow') {
+          // Approximate any shadow
+          tailwindClasses.push('shadow')
           continue
         }
         if (k === 'font-weight') {
@@ -236,6 +326,51 @@ function transformHtmlToJsx(inputHtml, mapping, componentName, tokens, mode) {
             continue
           }
         }
+        if (k === 'line-height') {
+          // map rem to tailwind key if typography provides it, else approximate using pxToStep
+          const lhKey = sizeByPx[val]
+          if (lhKey) { tailwindClasses.push(`leading-${lhKey}`); continue }
+          const step = pxToStep(val)
+          if (step) { tailwindClasses.push(`leading-${step}`); continue }
+        }
+        if (k === 'letter-spacing') {
+          const num = parseFloat(val)
+          if (!Number.isNaN(num)) {
+            if (num > 0) tailwindClasses.push('tracking-wide')
+            if (num > 1) tailwindClasses.push('tracking-wider')
+            if (num > 2) tailwindClasses.push('tracking-widest')
+            if (num < 0) tailwindClasses.push('tracking-tight')
+          }
+          continue
+        }
+        if (k === 'opacity') {
+          let o = parseFloat(val)
+          if (val.endsWith('%')) o = parseFloat(val) / 100
+          const pct = Math.max(0, Math.min(100, Math.round(o * 100)))
+          const nearest = Math.round(pct / 5) * 5
+          tailwindClasses.push(`opacity-${nearest}`)
+          continue
+        }
+        if (k === 'border') {
+          if (val === 'none' || val.includes('0')) { tailwindClasses.push('border-0'); continue }
+          tailwindClasses.push('border')
+          continue
+        }
+        if (k === 'border-width') {
+          const n = parseFloat(val)
+          if (!Number.isNaN(n)) {
+            if (n === 0) tailwindClasses.push('border-0')
+            else if (n === 2) tailwindClasses.push('border-2')
+            else if (n >= 4) tailwindClasses.push('border-4')
+            else if (n >= 8) tailwindClasses.push('border-8')
+            else tailwindClasses.push('border')
+            continue
+          }
+        }
+        if (k === 'border-color' || k === 'border-top-color' || k === 'border-left-color' || k === 'border-right-color' || k === 'border-bottom-color') {
+          const token = colorByValue[val]
+          if (token) { tailwindClasses.push(`border-${token}`); continue }
+        }
         filtered.push([k, v])
       }
 
@@ -252,9 +387,22 @@ function transformHtmlToJsx(inputHtml, mapping, componentName, tokens, mode) {
         if (filtered.length) {
           // Will be converted later in finalizeJsx
           $el.attr('style', canonical)
+          residualStyleCount += 1
         } else {
           $el.removeAttr('style')
         }
+      } else if (mode === 'tailwind') {
+        if (filtered.length) {
+          const arb = filtered.map(([k, v]) => {
+            const prop = k.trim().replace(/\s+/g, '-')
+            const val = String(v).trim().replace(/;/g, '').replace(/\s+/g, '_')
+            return `[${prop}:${val}]`
+          })
+          const before2 = $el.attr('className') || ''
+          $el.attr('className', `${before2} ${arb.join(' ')}`.trim())
+          residualStyleCount += 1
+        }
+        $el.removeAttr('style')
       } else {
         // Hybrid: extract to CSS Module
         let token = styleMap.get(canonical)
@@ -268,6 +416,7 @@ function transformHtmlToJsx(inputHtml, mapping, componentName, tokens, mode) {
         if (canonical) {
           const before2 = $el.attr('className') || ''
           $el.attr('className', `${before2} ${token}`.trim())
+          residualStyleCount += 1
         }
         $el.removeAttr('style')
       }
@@ -317,7 +466,7 @@ function transformHtmlToJsx(inputHtml, mapping, componentName, tokens, mode) {
       const width = $el.attr('width') || ''
       const height = $el.attr('height') || ''
       const cls2 = $el.attr('className') || ''
-      const svgMode = $el.attr('data-svg') === 'component'
+      const svgMode = $el.attr('data-svg') === 'component' || svgStrategy === 'component'
 
       const propSrcName = $el.attr('data-prop-src')
       const propAltName = $el.attr('data-prop-alt')
@@ -331,13 +480,13 @@ function transformHtmlToJsx(inputHtml, mapping, componentName, tokens, mode) {
   let normalized = $body.html() || ''
   normalized = finalizeJsx(normalized)
 
-  return { html: normalized, cssRules, props }
+  return { html: normalized, cssRules, props, stats: { residualStyleCount, textCount: textCounter, imageCount: imageCounter, unknownClasses: Array.from(unknownClasses) } }
 }
 
-async function convertFile(filePath, mapping, tokens, mode) {
+async function convertFile(filePath, mapping, tokens, mode, doFormat, verbose) {
   const raw = await fs.readFile(filePath, 'utf-8')
   const Component = toComponentName(filePath)
-  const { html, cssRules, props } = transformHtmlToJsx(raw, mapping, Component, tokens, mode)
+  const { html, cssRules, props, stats } = transformHtmlToJsx(raw, mapping, Component, tokens, mode)
 
   // Build CSS Module if any rules
   let cssImport = ''
@@ -427,10 +576,19 @@ async function convertFile(filePath, mapping, tokens, mode) {
     .filter(Boolean)
     .join('\n')
 
-  const out = `import React from 'react'\n${imports}\n${propsDecl}export default function ${Component}(props: ${propsType}) {\n  return (\n    ${jsx.split('\n').map((l) => '    ' + l).join('\n')}\n  )\n}\n`
+  let out = `import React from 'react'\n${imports}\n${propsDecl}export default function ${Component}(props: ${propsType}) {\n  return (\n    ${jsx.split('\n').map((l) => '    ' + l).join('\n')}\n  )\n}\n`
   const fileOut = path.join(OUT_DIR, `${Component}.tsx`)
+  if (doFormat) {
+    try {
+      const cfg = await prettier.resolveConfig(process.cwd()).catch(() => null)
+      out = prettier.format(out, { ...(cfg || {}), parser: 'typescript' })
+    } catch {}
+  }
   await fs.writeFile(fileOut, out, 'utf-8')
-  return { in: filePath, out: fileOut }
+  if (verbose) {
+    console.log(`• ${Component}: texts=${props.texts.length}, images=${props.images.length}, residualStyles=${stats.residualStyleCount}, cssRules=${cssRules.length}`)
+  }
+  return { in: filePath, out: fileOut, component: Component, stats }
 }
 
 async function main() {
@@ -455,9 +613,56 @@ async function main() {
   const results = []
   for (const f of htmlFiles) {
     const fp = path.join(SRC, f)
-    const r = await convertFile(fp, mapping, tokens, args.mode)
+    const r = await convertFile(fp, mapping, tokens, args.mode, args.format, args.verbose)
     results.push(r)
   }
+  // Build a barrel export for DX
+  try {
+    const genFiles = (await fs.readdir(OUT_DIR)).filter((f) => f.endsWith('.tsx'))
+    const lines = genFiles.map((f) => {
+      const name = f.replace(/\.[^.]+$/, '')
+      return `export { default as ${name} } from './${name}'`
+    })
+    const indexPath = path.join(OUT_DIR, 'index.ts')
+    let indexContent = lines.join('\n') + '\n'
+    if (args.format) {
+      try {
+        const cfg = await prettier.resolveConfig(process.cwd()).catch(() => null)
+        indexContent = prettier.format(indexContent, { ...(cfg || {}), parser: 'typescript' })
+      } catch {}
+    }
+    await fs.writeFile(indexPath, indexContent, 'utf-8')
+  } catch {}
+  // Emit conversion report
+  try {
+    const reportDir = path.join(process.cwd(), '.generated')
+    await fs.mkdir(reportDir, { recursive: true })
+    const summary = {
+      files: results.map((r) => ({
+        in: r.in,
+        out: r.out,
+        component: r.component,
+        stats: r.stats,
+      })),
+    }
+    await fs.writeFile(path.join(reportDir, 'convert-report.json'), JSON.stringify(summary, null, 2), 'utf-8')
+    // Build unmapped classes suggestions
+    const freq = new Map()
+    for (const r of results) {
+      const list = (r.stats && r.stats.unknownClasses) || []
+      for (const c of list) freq.set(c, (freq.get(c) || 0) + 1)
+    }
+    const entries = [...freq.entries()].sort((a, b) => b[1] - a[1]).map(([cls, count]) => {
+      let suggestion = null
+      if (/^gap-\d+$/.test(cls)) suggestion = cls
+      else if (/^rounded(-.*)?$/.test(cls)) suggestion = cls
+      else if (/^shadow(-.*)?$/.test(cls)) suggestion = cls
+      else if (/^text-(left|center|right|justify)$/.test(cls)) suggestion = cls
+      else if (/^(flex|inline-flex|grid)$/.test(cls)) suggestion = cls
+      return { class: cls, count, suggestion }
+    })
+    await fs.writeFile(path.join(reportDir, 'unmapped-classes.json'), JSON.stringify({ classes: entries }, null, 2), 'utf-8')
+  } catch {}
   console.log('✓ Converted components:', results)
 }
 

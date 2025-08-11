@@ -30,16 +30,18 @@ async function main() {
     map.set(h, entry)
   }
   const duplicates = Array.from(map.entries()).filter(([, files]) => files.length > 1)
+  try {
+    await fs.mkdir(path.join(process.cwd(), '.generated'), { recursive: true })
+    await fs.writeFile(path.join(process.cwd(), '.generated', 'css-trim-report.json'), JSON.stringify({ duplicates }, null, 2), 'utf-8')
+  } catch {}
   if (duplicates.length) {
     console.log('CSS duplicates detected across components:')
     for (const [hash, files] of duplicates) {
       console.log('-', hash, 'files:', files.join(', '))
     }
-    process.exitCode = 0
   } else {
     console.log('✓ No cross-file CSS duplicates found')
   }
 }
 
 main().catch((e) => { console.error(e); process.exit(1) })
-

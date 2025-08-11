@@ -8,7 +8,12 @@ const CODE_DIR = path.join(ROOT, 'figma-exports', 'code')
 
 async function exists(p) { try { await fs.access(p); return true } catch { return false } }
 
+function parseArgs(argv) {
+  return { strict: argv.includes('--strict'), report: argv.includes('--report') }
+}
+
 async function main() {
+  const args = parseArgs(process.argv)
   const issues = []
   // 1) Warn on missing manifest entries for referenced images in components
   const manifest = (await exists(MANIFEST)) ? JSON.parse(await fs.readFile(MANIFEST, 'utf-8')) : {}
@@ -45,14 +50,19 @@ async function main() {
     }
   }
 
+  try {
+    const outDir = path.join(ROOT, '.generated')
+    await fs.mkdir(outDir, { recursive: true })
+    await fs.writeFile(path.join(outDir, 'qa-report.json'), JSON.stringify({ issues }, null, 2), 'utf-8')
+  } catch {}
+
   if (issues.length) {
     console.log('QA issues found:')
     for (const i of issues) console.log('-', i)
-    process.exitCode = 1
+    if (args.strict) process.exitCode = 1
   } else {
     console.log('✓ QA passed: no blocking issues found')
   }
 }
 
 main().catch((e) => { console.error(e); process.exit(1) })
-

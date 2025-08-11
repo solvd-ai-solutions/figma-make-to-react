@@ -29,6 +29,16 @@ export async function POST(request: NextRequest) {
         if (files.length === 0) {
           throw new Error('No files uploaded')
         }
+        // Basic constraints
+        const MAX_FILES = 1000
+        const MAX_TOTAL = 50 * 1024 * 1024 // 50MB
+        if (files.length > MAX_FILES) {
+          throw new Error(`Too many files: ${files.length} > ${MAX_FILES}`)
+        }
+        const totalBytes = files.reduce((acc, f) => acc + (typeof (f as any).size === 'number' ? (f as any).size : 0), 0)
+        if (totalBytes > MAX_TOTAL) {
+          throw new Error(`Upload too large: ${(totalBytes/1024/1024).toFixed(1)}MB > 50MB`)
+        }
 
         // Use a serverless-safe temp working directory
         const workId = crypto.randomUUID()
@@ -50,6 +60,7 @@ export async function POST(request: NextRequest) {
             // Extract ZIP file
             const zip = new AdmZip(buffer)
             const entries = zip.getEntries()
+            if (entries.length > MAX_FILES) throw new Error('ZIP contains too many files')
             
             for (const entry of entries) {
               if (entry.isDirectory) continue
@@ -103,18 +114,24 @@ export async function POST(request: NextRequest) {
 
         const generatedHtmlPath = path.join(codeDir, 'generated.html')
         const htmlContent = await safeRead(generatedHtmlPath)
+        if (!htmlContent) {
+          throw new Error('No HTML content could be generated. Ensure your ZIP includes CSS or HTML exports.')
+        }
         const componentTsx = generateComponentFromHtml(htmlContent)
 
-        // Create a zip with a FULL runnable Next.js project scaffold
+        // Create a zip with a FULL runnable Next.js + Tailwind scaffold
         sendProgress('Packaging results...')
         const zip = new AdmZip()
         // Project scaffold
         zip.addFile('package.json', Buffer.from(createPackageJson(), 'utf-8'))
         zip.addFile('tsconfig.json', Buffer.from(createTsconfigJson(), 'utf-8'))
         zip.addFile('next.config.js', Buffer.from(createNextConfig(), 'utf-8'))
+        zip.addFile('postcss.config.js', Buffer.from(createPostcssConfig(), 'utf-8'))
+        zip.addFile('tailwind.config.js', Buffer.from(createTailwindConfig(), 'utf-8'))
         zip.addFile('README.md', Buffer.from(createReadme(), 'utf-8'))
         zip.addFile('src/app/layout.tsx', Buffer.from(createLayoutTsx(), 'utf-8'))
         zip.addFile('src/app/page.tsx', Buffer.from(createPageTsx(), 'utf-8'))
+        zip.addFile('src/styles/globals.css', Buffer.from(createGlobalsCss(), 'utf-8'))
 
         // Generated code and assets
         zip.addFile('src/components/generated/Generated.tsx', Buffer.from(componentTsx, 'utf-8'))
@@ -141,12 +158,13 @@ export async function POST(request: NextRequest) {
         
         controller.close()
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+        const err = error instanceof Error ? error : new Error('Unknown error')
         controller.enqueue(
           encoder.encode(`data: ${JSON.stringify({ 
-            message: `❌ Error: ${errorMessage}`, 
+            message: `❌ Error: ${err.message}`, 
             completed: false, 
-            error: true 
+            error: true,
+            code: 'CONVERSION_ERROR' 
           })}\n\n`)
         )
         controller.close()
@@ -256,7 +274,10 @@ function createPackageJson(): string {
         typescript: '5.4.5',
         '@types/node': '20.14.10',
         '@types/react': '18.3.3',
-        '@types/react-dom': '18.3.0'
+        '@types/react-dom': '18.3.0',
+        tailwindcss: '3.4.7',
+        autoprefixer: '10.4.19',
+        postcss: '8.4.39'
       }
     },
     null,
@@ -301,9 +322,21 @@ function createReadme(): string {
 }
 
 function createLayoutTsx(): string {
-  return `import React from 'react'\nimport '../styles/figma.css'\n\nexport const metadata = { title: 'Figma → React' }\n\nexport default function RootLayout({ children }: { children: React.ReactNode }) {\n  return (\n    <html lang=\"en\">\n      <body>{children}</body>\n    </html>\n  )\n}\n`
+  return `import React from 'react'\nimport '../styles/globals.css'\nimport '../styles/figma.css'\n\nexport const metadata = { title: 'Figma → React' }\n\nexport default function RootLayout({ children }: { children: React.ReactNode }) {\n  return (\n    <html lang=\"en\">\n      <body className=\"min-h-screen bg-white text-gray-900\">{children}</body>\n    </html>\n  )\n}\n`
 }
 
 function createPageTsx(): string {
   return `import Generated from '@/components/generated/Generated'\n\nexport default function Page() {\n  return (\n    <main style={{ padding: 24 }}>\n      <Generated />\n    </main>\n  )\n}\n`
+}
+
+function createPostcssConfig(): string {
+  return `module.exports = {\n  plugins: {\n    tailwindcss: {},\n    autoprefixer: {},\n  },\n}\n`
+}
+
+function createTailwindConfig(): string {
+  return `/** @type {import('tailwindcss').Config} */\nmodule.exports = {\n  content: ['./src/**/*.{js,ts,jsx,tsx}'],\n  theme: { extend: {} },\n  plugins: [],\n}\n`
+}
+
+function createGlobalsCss(): string {
+  return `@tailwind base;\n@tailwind components;\n@tailwind utilities;\n\n*,*::before,*::after{ box-sizing:border-box }\nhtml,body{ height:100% }\nbody{ margin:0 }\n`
 }

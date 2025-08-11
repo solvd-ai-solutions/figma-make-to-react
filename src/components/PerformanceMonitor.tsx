@@ -12,7 +12,11 @@ export function PerformanceMonitor() {
             console.log('LCP:', entry.startTime)
           }
           if (entry.entryType === 'first-input') {
-            console.log('FID:', entry.processingStart - entry.startTime)
+            // Fix: Use proper FID calculation with type assertion
+            const fidEntry = entry as any
+            if (fidEntry.processingStart) {
+              console.log('FID:', fidEntry.processingStart - fidEntry.startTime)
+            }
           }
         }
       })

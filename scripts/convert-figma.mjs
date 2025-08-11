@@ -2,7 +2,6 @@ import { promises as fs } from 'fs'
 import path from 'path'
 import { load } from 'cheerio'
 import prettier from 'prettier'
-import prettier from 'prettier'
 
 // Cheerio-based converter: parses HTML, normalizes attributes for JSX,
 // and emits TSX components under src/components/generated.

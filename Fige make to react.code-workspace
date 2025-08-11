@@ -1,0 +1,11 @@
+{
+	"folders": [
+		{
+			"path": "../Solvd_AI/codex-rust-v0.16.0"
+		}
+	],
+	"settings": {
+		"task.allowAutomaticTasks": "on",
+		"terminal.integrated.defaultProfile.osx": "zsh"
+	}
+}

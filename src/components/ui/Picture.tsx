@@ -1,5 +1,6 @@
 import React from 'react'
 import path from 'path'
+import Image from 'next/image'
 import manifestJson from '@/generated/image-manifest.json'
 
 type Entry = {
@@ -39,20 +40,20 @@ export function Picture({ src, alt, className, width, height, priority, sizes }:
   const loading = priority ? 'eager' : 'lazy'
 
   if (!entry) {
-    return <img src={src} alt={alt} className={className} width={w} height={h} loading={loading} />
+    return <Image src={src} alt={alt} className={className} width={w} height={h} priority={priority} />
   }
 
   return (
     <picture>
       {entry.avif ? <source type="image/avif" srcSet={entry.avif} sizes={sizes} /> : null}
       {entry.webp ? <source type="image/webp" srcSet={entry.webp} sizes={sizes} /> : null}
-      <img
+      <Image
         src={entry.original || src}
         alt={alt}
         className={className}
         width={w}
         height={h}
-        loading={loading}
+        priority={priority}
       />
     </picture>
   )

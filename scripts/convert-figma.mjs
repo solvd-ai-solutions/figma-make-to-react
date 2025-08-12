@@ -86,14 +86,33 @@ function transformHtmlToJsx(inputHtml, mapping, componentName, tokens, mode, svg
   const $ = load(inputHtml, { xmlMode: false, decodeEntities: false })
 
   // Extract only the body content, not the full HTML document
-  let bodyContent = $('body').html() || inputHtml
-  if (!bodyContent || bodyContent === inputHtml) {
+  let bodyContent = $('body').html()
+  if (!bodyContent) {
     // If no body tag found, use the entire content but remove html/head/body tags
     bodyContent = inputHtml.replace(/<html[^>]*>|<\/html>|<head[^>]*>|<\/head>|<body[^>]*>|<\/body>/gi, '')
   }
   
+  // Ensure we don't have any remaining HTML document structure
+  bodyContent = bodyContent.replace(/<html[^>]*>|<\/html>|<head[^>]*>|<\/head>|<body[^>]*>|<\/body>/gi, '')
+  
+  // Debug logging
+  if (process.env.DEBUG) {
+    console.log('Original HTML:', inputHtml.substring(0, 200) + '...')
+    console.log('Body content:', bodyContent.substring(0, 200) + '...')
+  }
+  
   // Create a new cheerio instance with just the body content
   const $body = load(bodyContent, { xmlMode: false, decodeEntities: false })
+  
+  // Double-check that we're not getting HTML document structure
+  if ($body('html').length > 0 || $body('head').length > 0 || $body('body').length > 0) {
+    console.warn('Warning: HTML document structure still present in body content')
+    // Force remove any remaining document structure, but preserve the content inside
+    $body('html, head, body').each((_, el) => {
+      const $el = $body(el)
+      $el.replaceWith($el.html())
+    })
+  }
 
   const styleMap = new Map() // canonical style string -> class token (e.g., __s1__)
   const cssRules = [] // [{ className: 's1', css: 'color:red;' }]
@@ -580,7 +599,7 @@ async function convertFile(filePath, mapping, tokens, mode, doFormat, verbose) {
   if (doFormat) {
     try {
       const cfg = await prettier.resolveConfig(process.cwd()).catch(() => null)
-      out = prettier.format(out, { ...(cfg || {}), parser: 'typescript' })
+      out = await prettier.format(out, { ...(cfg || {}), parser: 'typescript' })
     } catch {}
   }
   await fs.writeFile(fileOut, out, 'utf-8')
@@ -627,7 +646,7 @@ async function main() {
     if (args.format) {
       try {
         const cfg = await prettier.resolveConfig(process.cwd()).catch(() => null)
-        indexContent = prettier.format(indexContent, { ...(cfg || {}), parser: 'typescript' })
+        indexContent = await prettier.format(indexContent, { ...(cfg || {}), parser: 'typescript' })
       } catch {}
     }
     await fs.writeFile(indexPath, indexContent, 'utf-8')

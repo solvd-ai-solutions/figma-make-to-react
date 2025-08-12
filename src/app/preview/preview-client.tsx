@@ -103,7 +103,7 @@ export function PreviewClient({ components }: PreviewClientProps) {
           </p>
           <div className="space-y-2 text-sm text-blue-600">
             <div><code>git add .</code></div>
-            <div><code>git commit -m "Add converted Figma components"</code></div>
+            <div><code>git commit -m &quot;Add converted Figma components&quot;</code></div>
             <div><code>git push</code></div>
           </div>
         </div>

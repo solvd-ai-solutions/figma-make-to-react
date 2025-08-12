@@ -4,7 +4,7 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-white">
       {/* SOLVD Header with 2px Border */}
-      <div className="border-b-2 border-black bg-gradient-to-r from-[var(--color-primary-coral)] via-[var(--color-primary-teal)] to-[var(--color-primary-lavender)]">
+      <div className="border-b-2 border-black bg-gradient-to-r from-[var(--solv-coral)] via-[var(--solv-teal)] to-[var(--solv-lavender)]">
         <div className="container mx-auto px-4 py-8">
           <div className="text-center">
             <h1 className="text-6xl font-extrabold text-white mb-2 drop-shadow-lg">
@@ -26,7 +26,7 @@ export default function Home() {
           <div className="space-x-4">
             <Link
               href="/upload"
-              className="inline-block bg-[var(--color-primary-teal)] text-white px-6 py-3 rounded-lg text-xl font-semibold border-2 border-[var(--color-primary-teal)] hover:bg-[var(--color-primary-coral)] hover:text-black transition-all duration-300 ease-out transform hover:-translate-y-1 shadow-lg"
+              className="inline-block bg-[var(--solv-teal)] text-white px-6 py-3 rounded-lg text-xl font-semibold border-2 border-[var(--solv-teal)] hover:bg-[var(--solv-coral)] hover:text-black transition-all duration-300 ease-out transform hover:-translate-y-1 shadow-lg"
             >
               🚀 Upload Figma Export
             </Link>
@@ -41,8 +41,8 @@ export default function Home() {
         </div>
 
         <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-          {/* SOLVD Card 1 - 2px Border + Coral */}
-          <div className="bg-[var(--color-primary-coral)] rounded-xl p-6 shadow-lg text-center border-2 border-black hover:border-[var(--color-primary-teal)] transition-all duration-300 ease-out transform hover:-translate-y-1 hover:shadow-xl">
+          {/* SOLVD Card 1 - 2px Border + SOLVD Coral */}
+          <div className="bg-[var(--solv-coral)] rounded-xl p-6 shadow-lg text-center border-2 border-black hover:border-[var(--solv-teal)] transition-all duration-300 ease-out transform hover:-translate-y-1 hover:shadow-xl">
             <div className="text-5xl mb-4">⚡</div>
             <h3 className="text-2xl font-bold text-black mb-3">Auto-Convert</h3>
             <p className="text-black font-medium">
@@ -50,8 +50,8 @@ export default function Home() {
             </p>
           </div>
           
-          {/* SOLVD Card 2 - 2px Border + Teal */}
-          <div className="bg-[var(--color-primary-teal)] rounded-xl p-6 shadow-lg text-center border-2 border-black hover:border-[var(--color-primary-coral)] transition-all duration-300 ease-out transform hover:-translate-y-1 hover:shadow-xl">
+          {/* SOLVD Card 2 - 2px Border + SOLVD Teal */}
+          <div className="bg-[var(--solv-teal)] rounded-xl p-6 shadow-lg text-center border-2 border-black hover:border-[var(--solv-coral)] transition-all duration-300 ease-out transform hover:-translate-y-1 hover:shadow-xl">
             <div className="text-5xl mb-4">🎯</div>
             <h3 className="text-2xl font-bold text-black mb-3">Pixel Perfect</h3>
             <p className="text-black font-medium">
@@ -59,8 +59,8 @@ export default function Home() {
             </p>
           </div>
           
-          {/* SOLVD Card 3 - 2px Border + Lavender */}
-          <div className="bg-[var(--color-primary-lavender)] rounded-xl p-6 shadow-lg text-center border-2 border-black hover:border-[var(--color-primary-teal)] transition-all duration-300 ease-out transform hover:-translate-y-1 hover:shadow-xl">
+          {/* SOLVD Card 3 - 2px Border + SOLVD Lavender */}
+          <div className="bg-[var(--solv-lavender)] rounded-xl p-6 shadow-lg text-center border-2 border-black hover:border-[var(--solv-teal)] transition-all duration-300 ease-out transform hover:-translate-y-1 hover:shadow-xl">
             <div className="text-5xl mb-4">🚀</div>
             <h3 className="text-2xl font-bold text-black mb-3">Deploy Ready</h3>
             <p className="text-black font-medium">
@@ -75,27 +75,27 @@ export default function Home() {
           </h2>
           
           <div className="grid md:grid-cols-4 gap-6">
-            {/* Step 1 - Coral */}
+            {/* Step 1 - SOLVD Coral */}
             <div className="text-center">
-              <div className="bg-[var(--color-primary-coral)] rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 border-2 border-black">
+              <div className="bg-[var(--solv-coral)] rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 border-2 border-black">
                 <span className="text-black font-bold text-xl">1</span>
               </div>
               <h4 className="font-bold mb-2 text-black text-lg">Export from Figma</h4>
               <p className="text-sm text-black font-medium">Export your design as code from Figma Make</p>
             </div>
             
-            {/* Step 2 - Teal */}
+            {/* Step 2 - SOLVD Teal */}
             <div className="text-center">
-              <div className="bg-[var(--color-primary-teal)] rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 border-2 border-black">
+              <div className="bg-[var(--solv-teal)] rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 border-2 border-black">
                 <span className="text-black font-bold text-xl">2</span>
               </div>
               <h4 className="font-bold mb-2 text-black text-lg">Upload Files</h4>
               <p className="text-sm text-black font-medium">Drag & drop your ZIP or individual files</p>
             </div>
             
-            {/* Step 3 - Lavender */}
+            {/* Step 3 - SOLVD Lavender */}
             <div className="text-center">
-              <div className="bg-[var(--color-primary-lavender)] rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 border-2 border-black">
+              <div className="bg-[var(--solv-lavender)] rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 border-2 border-black">
                 <span className="text-black font-bold text-xl">3</span>
               </div>
               <h4 className="font-bold mb-2 text-black text-lg">Auto-Convert</h4>

@@ -4,14 +4,14 @@ import { ReactNode } from 'react'
 
 export const metadata: Metadata = {
   title: {
-    default: 'Figma Make to React Converter',
-    template: '%s | Figma Converter'
+    default: 'SOLVD AI SOLUTIONS - Figma Make to React Converter',
+    template: '%s | SOLVD AI SOLUTIONS'
   },
-  description: 'Convert Figma Make designs into pixel-perfect, production-ready React applications with automatic Tailwind CSS generation.',
-  keywords: ['Figma', 'React', 'Next.js', 'Tailwind CSS', 'Design to Code', 'Figma Make'],
-  authors: [{ name: 'Your Name' }],
-  creator: 'Figma Converter',
-  publisher: 'Figma Converter',
+  description: 'SOLVD AI SOLUTIONS: Convert Figma Make designs into pixel-perfect, production-ready React applications with automatic Tailwind CSS generation.',
+  keywords: ['SOLVD AI', 'Figma', 'React', 'Next.js', 'Tailwind CSS', 'Design to Code', 'Figma Make', 'AI Solutions'],
+  authors: [{ name: 'SOLVD AI SOLUTIONS' }],
+  creator: 'SOLVD AI SOLUTIONS',
+  publisher: 'SOLVD AI SOLUTIONS',
   formatDetection: {
     email: false,
     address: false,
@@ -24,10 +24,10 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://your-domain.com',
-    title: 'Figma Make to React Converter',
-    description: 'Convert Figma Make designs into pixel-perfect React applications',
-    siteName: 'Figma Converter',
+    url: 'https://cut-and-order-manager.vercel.app',
+    title: 'SOLVD AI SOLUTIONS - Figma Make to React Converter',
+    description: 'SOLVD AI SOLUTIONS: Convert Figma Make designs into pixel-perfect React applications',
+    siteName: 'SOLVD AI SOLUTIONS',
     images: [
       {
         url: '/og-image.png',
@@ -39,8 +39,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Figma Make to React Converter',
-    description: 'Convert Figma Make designs into pixel-perfect React applications',
+    title: 'SOLVD AI SOLUTIONS - Figma Make to React Converter',
+    description: 'SOLVD AI SOLUTIONS: Convert Figma Make designs into pixel-perfect React applications',
     images: ['/og-image.png'],
   },
   robots: {
@@ -59,7 +59,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className="h-full" data-theme="light">
-      <body className="min-h-full bg-background text-neutral antialiased">
+      <body className="min-h-full bg-[var(--color-neutral-50)] text-[var(--color-neutral-900)] antialiased font-sans">
         {children}
       </body>
     </html>

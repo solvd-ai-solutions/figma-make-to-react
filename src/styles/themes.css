@@ -1,11 +1,104 @@
-/* generated themes */
+/* SOLVD AI SOLUTIONS Theme System */
 [data-theme="dark"] {
-  --color-background: #0b0f17;
-  --color-neutral: #e5e7eb;
+  --color-background: var(--color-neutral-900);
+  --color-neutral: var(--color-neutral-100);
+  --color-primary: var(--color-primary-teal);
+  --color-secondary: var(--color-primary-coral);
+  --color-accent: var(--color-primary-lavender);
 }
 
 [data-theme="light"] {
-  --color-background: #ffffff;
-  --color-neutral: #111827;
+  --color-background: var(--color-neutral-50);
+  --color-neutral: var(--color-neutral-900);
+  --color-primary: var(--color-primary-teal);
+  --color-secondary: var(--color-primary-coral);
+  --color-accent: var(--color-primary-lavender);
+}
+
+/* SOLVD Component System */
+.solv-container {
+  max-width: 80rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 640px) {
+  .solv-container {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .solv-container {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+.solv-section {
+  padding-top: 4rem;
+  padding-bottom: 4rem;
+}
+
+@media (min-width: 640px) {
+  .solv-section {
+    padding-top: 6rem;
+    padding-bottom: 6rem;
+  }
+}
+
+.solv-card {
+  background-color: white;
+  border-radius: 1rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  border: 2px solid rgba(79, 179, 166, 0.2);
+  padding: 2rem;
+}
+
+.solv-btn-primary {
+  background-color: var(--color-primary-teal);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+  transform: scale(1);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  font-weight: 500;
+}
+
+.solv-btn-primary:hover {
+  background-color: rgba(79, 179, 166, 0.9);
+  transform: scale(1.05);
+}
+
+.solv-btn-secondary {
+  background-color: var(--color-primary-coral);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+  transform: scale(1);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  font-weight: 500;
+}
+
+.solv-btn-secondary:hover {
+  background-color: rgba(255, 107, 107, 0.9);
+  transform: scale(1.05);
+}
+
+.solv-text-primary {
+  color: var(--color-primary-teal);
+}
+
+.solv-text-secondary {
+  color: var(--color-primary-coral);
+}
+
+.solv-border {
+  border: 2px solid rgba(79, 179, 166, 0.2);
 }
 
